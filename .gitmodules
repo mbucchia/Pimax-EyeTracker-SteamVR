@@ -1,0 +1,9 @@
+[submodule "external/openvr"]
+	path = external/openvr
+	url = https://github.com/ValveSoftware/openvr.git
+[submodule "external/PVR"]
+	path = external/PVR
+	url = https://github.com/mbucchia/PVR.git
+[submodule "external/OpenXR-MixedReality"]
+	path = external/OpenXR-MixedReality
+	url = https://github.com/mbucchia/OpenXR-MixedReality.git

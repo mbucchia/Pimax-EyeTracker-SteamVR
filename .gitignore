@@ -1,0 +1,9 @@
+.vs/
+packages/
+bin/
+**/x64/
+**/Win32/
+**/obj/
+*.vcxproj.user
+*.csproj.user
+tracing/*.etl

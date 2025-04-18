@@ -1,0 +1,9 @@
+{
+	"alwaysActivate": true,
+	"name" : "aapvr_shim",
+
+	"hmd_presence" :
+	[
+		"*.*"
+	]
+}
