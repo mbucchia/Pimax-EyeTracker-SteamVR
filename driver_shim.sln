@@ -1,0 +1,111 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "driver_shim", "driver_shim\driver_shim.vcxproj", "{5D913C1C-E92F-4833-A253-C73CAD82E038}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A4D2019B-622D-49B9-9510-16877979807A} = {A4D2019B-622D-49B9-9510-16877979807A}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		.clang-format = .clang-format
+		.gitignore = .gitignore
+		tracing\Capture-ETL.bat = tracing\Capture-ETL.bat
+		driver_shim\default.vrsettings = driver_shim\default.vrsettings
+		driver_shim\driver.vrdrivermanifest = driver_shim\driver.vrdrivermanifest
+		tracing\DriverTracing.wprp = tracing\DriverTracing.wprp
+		LICENSE = LICENSE
+		.github\workflows\msbuild.yml = .github\workflows\msbuild.yml
+		README.md = README.md
+		utils\Register-Driver.bat = utils\Register-Driver.bat
+		THIRD_PARTY = THIRD_PARTY
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test Application", "Test Application", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Gltf_win32", "external\OpenXR-MixedReality\shared\gltf\Gltf_win32.vcxproj", "{6A3225A3-0750-47B7-8004-80CA543F8B8B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Framework", "Framework", "{48588668-6449-43AE-9C65-6C9AADC00B7F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pbr_win32", "external\OpenXR-MixedReality\shared\pbr\pbr_win32.vcxproj", "{2B7688F8-9AE6-4A67-809B-1BAC82094F21}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XrSceneLib_win32", "external\OpenXR-MixedReality\shared\XrSceneLib\XrSceneLib_win32.vcxproj", "{A758AF22-F54F-4C74-BF85-05A377B5892E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SampleShared_win32", "external\OpenXR-MixedReality\shared\SampleShared\SampleShared_win32.vcxproj", "{269C12FA-E68D-470B-A734-4701034306BD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EyeGazeInteractionWin32", "external\OpenXR-MixedReality\samples\EyeGazeInteractionUwp\EyeGazeInteractionWin32.vcxproj", "{A4D2019B-622D-49B9-9510-16877979807A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5D913C1C-E92F-4833-A253-C73CAD82E038}.Debug|x64.ActiveCfg = Debug|x64
+		{5D913C1C-E92F-4833-A253-C73CAD82E038}.Debug|x64.Build.0 = Debug|x64
+		{5D913C1C-E92F-4833-A253-C73CAD82E038}.Debug|x86.ActiveCfg = Debug|Win32
+		{5D913C1C-E92F-4833-A253-C73CAD82E038}.Debug|x86.Build.0 = Debug|Win32
+		{5D913C1C-E92F-4833-A253-C73CAD82E038}.Release|x64.ActiveCfg = Release|x64
+		{5D913C1C-E92F-4833-A253-C73CAD82E038}.Release|x64.Build.0 = Release|x64
+		{5D913C1C-E92F-4833-A253-C73CAD82E038}.Release|x86.ActiveCfg = Release|Win32
+		{5D913C1C-E92F-4833-A253-C73CAD82E038}.Release|x86.Build.0 = Release|Win32
+		{6A3225A3-0750-47B7-8004-80CA543F8B8B}.Debug|x64.ActiveCfg = Debug|x64
+		{6A3225A3-0750-47B7-8004-80CA543F8B8B}.Debug|x64.Build.0 = Debug|x64
+		{6A3225A3-0750-47B7-8004-80CA543F8B8B}.Debug|x86.ActiveCfg = Debug|Win32
+		{6A3225A3-0750-47B7-8004-80CA543F8B8B}.Debug|x86.Build.0 = Debug|Win32
+		{6A3225A3-0750-47B7-8004-80CA543F8B8B}.Release|x64.ActiveCfg = Release|x64
+		{6A3225A3-0750-47B7-8004-80CA543F8B8B}.Release|x64.Build.0 = Release|x64
+		{6A3225A3-0750-47B7-8004-80CA543F8B8B}.Release|x86.ActiveCfg = Release|Win32
+		{6A3225A3-0750-47B7-8004-80CA543F8B8B}.Release|x86.Build.0 = Release|Win32
+		{2B7688F8-9AE6-4A67-809B-1BAC82094F21}.Debug|x64.ActiveCfg = Debug|x64
+		{2B7688F8-9AE6-4A67-809B-1BAC82094F21}.Debug|x64.Build.0 = Debug|x64
+		{2B7688F8-9AE6-4A67-809B-1BAC82094F21}.Debug|x86.ActiveCfg = Debug|Win32
+		{2B7688F8-9AE6-4A67-809B-1BAC82094F21}.Debug|x86.Build.0 = Debug|Win32
+		{2B7688F8-9AE6-4A67-809B-1BAC82094F21}.Release|x64.ActiveCfg = Release|x64
+		{2B7688F8-9AE6-4A67-809B-1BAC82094F21}.Release|x64.Build.0 = Release|x64
+		{2B7688F8-9AE6-4A67-809B-1BAC82094F21}.Release|x86.ActiveCfg = Release|Win32
+		{2B7688F8-9AE6-4A67-809B-1BAC82094F21}.Release|x86.Build.0 = Release|Win32
+		{A758AF22-F54F-4C74-BF85-05A377B5892E}.Debug|x64.ActiveCfg = Debug|x64
+		{A758AF22-F54F-4C74-BF85-05A377B5892E}.Debug|x64.Build.0 = Debug|x64
+		{A758AF22-F54F-4C74-BF85-05A377B5892E}.Debug|x86.ActiveCfg = Debug|Win32
+		{A758AF22-F54F-4C74-BF85-05A377B5892E}.Debug|x86.Build.0 = Debug|Win32
+		{A758AF22-F54F-4C74-BF85-05A377B5892E}.Release|x64.ActiveCfg = Release|x64
+		{A758AF22-F54F-4C74-BF85-05A377B5892E}.Release|x64.Build.0 = Release|x64
+		{A758AF22-F54F-4C74-BF85-05A377B5892E}.Release|x86.ActiveCfg = Release|Win32
+		{A758AF22-F54F-4C74-BF85-05A377B5892E}.Release|x86.Build.0 = Release|Win32
+		{269C12FA-E68D-470B-A734-4701034306BD}.Debug|x64.ActiveCfg = Debug|x64
+		{269C12FA-E68D-470B-A734-4701034306BD}.Debug|x64.Build.0 = Debug|x64
+		{269C12FA-E68D-470B-A734-4701034306BD}.Debug|x86.ActiveCfg = Debug|Win32
+		{269C12FA-E68D-470B-A734-4701034306BD}.Debug|x86.Build.0 = Debug|Win32
+		{269C12FA-E68D-470B-A734-4701034306BD}.Release|x64.ActiveCfg = Release|x64
+		{269C12FA-E68D-470B-A734-4701034306BD}.Release|x64.Build.0 = Release|x64
+		{269C12FA-E68D-470B-A734-4701034306BD}.Release|x86.ActiveCfg = Release|Win32
+		{269C12FA-E68D-470B-A734-4701034306BD}.Release|x86.Build.0 = Release|Win32
+		{A4D2019B-622D-49B9-9510-16877979807A}.Debug|x64.ActiveCfg = Debug|x64
+		{A4D2019B-622D-49B9-9510-16877979807A}.Debug|x64.Build.0 = Debug|x64
+		{A4D2019B-622D-49B9-9510-16877979807A}.Debug|x86.ActiveCfg = Debug|Win32
+		{A4D2019B-622D-49B9-9510-16877979807A}.Debug|x86.Build.0 = Debug|Win32
+		{A4D2019B-622D-49B9-9510-16877979807A}.Release|x64.ActiveCfg = Release|x64
+		{A4D2019B-622D-49B9-9510-16877979807A}.Release|x64.Build.0 = Release|x64
+		{A4D2019B-622D-49B9-9510-16877979807A}.Release|x86.ActiveCfg = Release|Win32
+		{A4D2019B-622D-49B9-9510-16877979807A}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6A3225A3-0750-47B7-8004-80CA543F8B8B} = {48588668-6449-43AE-9C65-6C9AADC00B7F}
+		{48588668-6449-43AE-9C65-6C9AADC00B7F} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{2B7688F8-9AE6-4A67-809B-1BAC82094F21} = {48588668-6449-43AE-9C65-6C9AADC00B7F}
+		{A758AF22-F54F-4C74-BF85-05A377B5892E} = {48588668-6449-43AE-9C65-6C9AADC00B7F}
+		{269C12FA-E68D-470B-A734-4701034306BD} = {48588668-6449-43AE-9C65-6C9AADC00B7F}
+		{A4D2019B-622D-49B9-9510-16877979807A} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {578423DD-D0F8-42EA-9B55-38083560A35F}
+	EndGlobalSection
+EndGlobal

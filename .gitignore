@@ -1,0 +1,7 @@
+.vs/
+packages/
+bin/
+**/x64/
+**/Win32/
+**/obj/
+tracing/*.etl
