@@ -8,6 +8,18 @@ DISCLAIMER: This software is distributed as-is, without any warranties or condit
 
 # Developer Walkthrough
 
+## Building and running
+
+1) Make sure to check out all the submodules:
+
+```
+git submodule update --init
+```
+
+2) Open the VS solution and build the configuration of your choice. The output is placed under `bin/distribution` and matches the file layout expected by SteamVR.
+
+3) **Make sure SteamVR is completely closed.** Then, from the `bin/distribution` folder, run `Register-Driver.bat` to register your driver with SteamVR.
+
 ## SteamVR API for Eye Tracking
 
 Starting with SteamVR 2.8.3, the [`XR_EXT_eye_gaze_interaction`](https://registry.khronos.org/OpenXR/specs/1.0/man/html/XR_EXT_eye_gaze_interaction.html) OpenXR extension is advertised by the SteamVR OpenXR runtime. However, Valve yet has to publish an updated [OpenVR Driver SDK](https://github.com/ValveSoftware/openvr/tree/master/headers) with the necessary API for any 3rd party driver to send eye trackinh data to the extension.
