@@ -26,22 +26,25 @@
 #include "DetourUtils.h"
 #include "Tracing.h"
 
-namespace {
-    using namespace driver_shim;
-
-    // These are the undocumented definitions for IVRDriverInput_Latest.
+namespace vr {
     struct VREyeTrackingData_t {
         uint16_t flag1;
         uint8_t flag2;
         DirectX::XMVECTOR vector;
     };
-    typedef vr::EVRInputError (*pfnUpdateEyeTrackingComponent)(vr::IVRDriverInput* driverInput,
-                                                               vr::VRInputComponentHandle_t ulComponent,
-                                                               VREyeTrackingData_t* data);
-    typedef vr::EVRInputError (*pfnCreateEyeTrackingComponent)(vr::IVRDriverInput* driverInput,
-                                                               vr::PropertyContainerHandle_t ulContainer,
-                                                               const char* pchName,
-                                                               vr::VRInputComponentHandle_t* pHandle);
+    struct IVRDriverInputInternal_XXX {
+        virtual void dummy01() = 0;
+        virtual void dummy02() = 0;
+        virtual vr::EVRInputError CreateEyeTrackingComponent(vr::PropertyContainerHandle_t ulContainer,
+                                                             const char* pchName,
+                                                             vr::VRInputComponentHandle_t* pHandle) = 0;
+        virtual vr::EVRInputError UpdateEyeTrackingComponent(vr::VRInputComponentHandle_t ulComponent,
+                                                             VREyeTrackingData_t* data) = 0;
+    };
+} // namespace vr
+
+namespace {
+    using namespace driver_shim;
 
     // The HmdShimDriver driver wraps another ITrackedDeviceServerDriver instance with the intent to override
     // properties and behaviors.
@@ -68,16 +71,13 @@ namespace {
             // Advertise that we will pass eye tracking data. This is an undocumented property.
             vr::VRProperties()->SetBoolProperty(container, (vr::ETrackedDeviceProperty)6009, true);
 
-            // Populate the undocumented method pointers.
-            {
-                const void** vtable = *((const void***)vr::VRDriverInput());
-                IVRDriverInput_CreateEyeTrackingComponent = (pfnCreateEyeTrackingComponent)vtable[0x48 / 8];
-                IVRDriverInput_UpdateEyeTrackingComponent = (pfnUpdateEyeTrackingComponent)vtable[0x50 / 8];
-            }
+            // Get the internal interface.
+            vr::EVRInitError eError;
+            IVRDriverInputInternal_XXX = (vr::IVRDriverInputInternal_XXX*)vr::VRDriverContext()->GetGenericInterface(
+                "IVRDriverInputInternal_XXX", &eError);
 
             // Create the eye tracking component.
-            IVRDriverInput_CreateEyeTrackingComponent(
-                vr::VRDriverInput(), container, "/eyetracking", &m_eyeTrackingComponent);
+            IVRDriverInputInternal_XXX->CreateEyeTrackingComponent(container, "/eyetracking", &m_eyeTrackingComponent);
 
             // Schedule updates in a background thread.
             m_active = true;
@@ -131,7 +131,7 @@ namespace {
             const vr::PropertyContainerHandle_t container =
                 vr::VRProperties()->TrackedDeviceToPropertyContainer(m_deviceIndex);
 
-            VREyeTrackingData_t data{};
+            vr::VREyeTrackingData_t data{};
             while (true) {
                 // Wait for the next time to update.
                 {
@@ -183,7 +183,7 @@ namespace {
                     data.flag2 = 0;
                     data.vector = DirectX::XMVectorSet(0, 0, -1, 1);
                 }
-                IVRDriverInput_UpdateEyeTrackingComponent(vr::VRDriverInput(), m_eyeTrackingComponent, &data);
+                IVRDriverInputInternal_XXX->UpdateEyeTrackingComponent(m_eyeTrackingComponent, &data);
             }
 
             DriverLog("Bye from HmdShimDriver::UpdateThread");
@@ -201,9 +201,7 @@ namespace {
         std::thread m_updateThread;
 
         vr::VRInputComponentHandle_t m_eyeTrackingComponent = 0;
-
-        pfnCreateEyeTrackingComponent IVRDriverInput_CreateEyeTrackingComponent = nullptr;
-        pfnUpdateEyeTrackingComponent IVRDriverInput_UpdateEyeTrackingComponent = nullptr;
+        vr::IVRDriverInputInternal_XXX* IVRDriverInputInternal_XXX = nullptr;
     };
 } // namespace
 

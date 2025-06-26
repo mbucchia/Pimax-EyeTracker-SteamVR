@@ -36,49 +36,43 @@ This effectively sets the value for the `XrSystemEyeGazeInteractionPropertiesEXT
 
 ![OpenXR Explorer showing the value of supportsEyeGazeInteraction](images/openxr-explorer.png)
 
-Next, an HMD class driver must create a special component using the undocumented method of `IVRDriverInput`:
+The HMD class driver will need to use the undocumented internal interface `IVRDriverInput_XXX`, declared as follows:
 
 ```cpp
-    typedef vr::EVRInputError (*pfnCreateEyeTrackingComponent)(vr::IVRDriverInput* driverInput,
-                                                                vr::PropertyContainerHandle_t ulContainer,
-                                                                const char* pchName,
-                                                                vr::VRInputComponentHandle_t* pHandle);
-```
-
-We retrieve a pointer to this method as follows:
-
-```cpp
-    const void** vtable = *((const void***)vr::VRDriverInput());
-    IVRDriverInput_CreateEyeTrackingComponent = (pfnCreateEyeTrackingComponent)vtable[0x48 / 8];
-```
-
-And we invoke the method and store the resulting handle:
-
-```cpp
-    IVRDriverInput_CreateEyeTrackingComponent(vr::VRDriverInput(), container, "/eyetracking", &m_eyeTrackingComponent);
-```
-
-Finally, we can push eye tracking data to SteamVR when appropriate. We use a second undocumented method of `IVRDriverInput`:
-
-```cpp
+namespace vr {
     struct VREyeTrackingData_t {
         uint16_t flag1;
         uint8_t flag2;
         DirectX::XMVECTOR vector;
     };
-    typedef vr::EVRInputError (*pfnUpdateEyeTrackingComponent)(vr::IVRDriverInput* driverInput,
-                                                               vr::VRInputComponentHandle_t ulComponent,
-                                                               VREyeTrackingData_t* data);
+
+    struct IVRDriverInputInternal_XXX {
+        virtual void dummy01() = 0;
+        virtual void dummy02() = 0;
+        virtual vr::EVRInputError CreateEyeTrackingComponent(vr::PropertyContainerHandle_t ulContainer,
+                                                             const char* pchName,
+                                                             vr::VRInputComponentHandle_t* pHandle) = 0;
+        virtual vr::EVRInputError UpdateEyeTrackingComponent(vr::VRInputComponentHandle_t ulComponent,
+                                                             VREyeTrackingData_t* data) = 0;
+    };
+} // namespace vr
 ```
 
-We retrieve a pointer to this method as follows:
+We retrieve a pointer to this interface:
 
 ```cpp
-    const void** vtable = *((const void***)vr::VRDriverInput());
-    IVRDriverInput_UpdateEyeTrackingComponent = (pfnUpdateEyeTrackingComponent)vtable[0x50 / 8];
+    vr::EVRInitError eError;
+    vr::IVRDriverInputInternal_XXX* IVRDriverInputInternal_XXX =
+        (vr::IVRDriverInputInternal_XXX*)vr::VRDriverContext()->GetGenericInterface("IVRDriverInputInternal_XXX", &eError);
 ```
 
-And we can invoke it and pass our eye gaze vector:
+We now create a special component to submit the eye tracking data and store the resulting handle:
+
+```cpp
+    IVRDriverInputInternal_XXX->CreateEyeTrackingComponent(container, "/eyetracking", &m_eyeTrackingComponent);
+```
+
+Finally, we can push eye tracking data to SteamVR when appropriate.
 
 ```
     VREyeTrackingData_t data{};
@@ -92,7 +86,7 @@ And we can invoke it and pass our eye gaze vector:
         data.flag2 = 0;
         data.vector = DirectX::XMVectorSet(0, 0, -1, 1);
     }
-    IVRDriverInput_UpdateEyeTrackingComponent(vr::VRDriverInput(), m_eyeTrackingComponent, &data);
+    IVRDriverInputInternal_XXX->UpdateEyeTrackingComponent(m_eyeTrackingComponent, &data);
 ```
 
 The gaze vector is a unit vector that originates from the center of the head and points forward (z=-1).
