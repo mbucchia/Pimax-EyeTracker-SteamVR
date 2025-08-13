@@ -32,9 +32,26 @@ namespace vr {
         uint8_t flag2;
         DirectX::XMVECTOR vector;
     };
+
     struct IVRDriverInputInternal_XXX {
+        virtual vr::EVRInputError CreateEyeTrackingComponent(vr::PropertyContainerHandle_t ulContainer,
+                                                             const char* pchName,
+                                                             vr::VRInputComponentHandle_t* pHandle) = 0;
+        virtual vr::EVRInputError UpdateEyeTrackingComponent(vr::VRInputComponentHandle_t ulComponent,
+                                                             VREyeTrackingData_t* data) = 0;
+    };
+
+    struct IVRDriverInput_XXX {
+        virtual void dummy00() = 0;
         virtual void dummy01() = 0;
         virtual void dummy02() = 0;
+        virtual void dummy03() = 0;
+        virtual void dummy04() = 0;
+        virtual void dummy05() = 0;
+        virtual void dummy06() = 0;
+        // IVRDriverInput_004 starts here
+        virtual void dummy07() = 0;
+        virtual void dummy08() = 0;
         virtual vr::EVRInputError CreateEyeTrackingComponent(vr::PropertyContainerHandle_t ulContainer,
                                                              const char* pchName,
                                                              vr::VRInputComponentHandle_t* pHandle) = 0;
@@ -73,11 +90,45 @@ namespace {
 
             // Get the internal interface.
             vr::EVRInitError eError;
-            IVRDriverInputInternal_XXX = (vr::IVRDriverInputInternal_XXX*)vr::VRDriverContext()->GetGenericInterface(
-                "IVRDriverInputInternal_XXX", &eError);
+            {
+                IVRDriverInput_XXX =
+                    (vr::IVRDriverInput_XXX*)vr::VRDriverContext()->GetGenericInterface("IVRDriverInput_004", &eError);
 
-            // Create the eye tracking component.
-            IVRDriverInputInternal_XXX->CreateEyeTrackingComponent(container, "/eyetracking", &m_eyeTrackingComponent);
+                if (IVRDriverInput_XXX) {
+                    const void** vtable = *((const void***)IVRDriverInput_XXX);
+                    if (((intptr_t)vtable[9] - (intptr_t)vtable[0]) > 0x10000) {
+                        IVRDriverInput_XXX = nullptr;
+                    }
+                }
+                if (!IVRDriverInput_XXX) {
+                    DriverLog("IVRDriverInput_004 appears ineligible for eye tracking");
+                }
+            }
+            if (!IVRDriverInput_XXX) {
+                IVRDriverInputInternal_XXX =
+                    (vr::IVRDriverInputInternal_XXX*)vr::VRDriverContext()->GetGenericInterface(
+                        "IVRDriverInputInternal_XXX", &eError);
+
+                if (IVRDriverInputInternal_XXX) {
+                    const void** vtable = *((const void***)IVRDriverInputInternal_XXX);
+                    if (((intptr_t)vtable[1] - (intptr_t)vtable[0]) > 0x10000) {
+                        IVRDriverInputInternal_XXX = nullptr;
+                    }
+                }
+                if (!IVRDriverInputInternal_XXX) {
+                    DriverLog("IVRDriverInputInternal appears ineligible for eye tracking");
+                }
+            }
+
+            if (IVRDriverInput_XXX) {
+                IVRDriverInput_XXX->CreateEyeTrackingComponent(container, "/eyetracking", &m_eyeTrackingComponent);
+            } else if (IVRDriverInputInternal_XXX) {
+                IVRDriverInputInternal_XXX->CreateEyeTrackingComponent(
+                    container, "/eyetracking", &m_eyeTrackingComponent);
+            } else {
+                DriverLog("No usable interface for eye tracking");
+            }
+            DriverLog("Eye Gaze Component: %lld", m_eyeTrackingComponent);
 
             // Schedule updates in a background thread.
             m_active = true;
@@ -183,7 +234,11 @@ namespace {
                     data.flag2 = 0;
                     data.vector = DirectX::XMVectorSet(0, 0, -1, 1);
                 }
-                IVRDriverInputInternal_XXX->UpdateEyeTrackingComponent(m_eyeTrackingComponent, &data);
+                if (IVRDriverInput_XXX) {
+                    IVRDriverInput_XXX->UpdateEyeTrackingComponent(m_eyeTrackingComponent, &data);
+                } else if (IVRDriverInputInternal_XXX) {
+                    IVRDriverInputInternal_XXX->UpdateEyeTrackingComponent(m_eyeTrackingComponent, &data);
+                }
             }
 
             DriverLog("Bye from HmdShimDriver::UpdateThread");
@@ -202,6 +257,7 @@ namespace {
 
         vr::VRInputComponentHandle_t m_eyeTrackingComponent = 0;
         vr::IVRDriverInputInternal_XXX* IVRDriverInputInternal_XXX = nullptr;
+        vr::IVRDriverInput_XXX* IVRDriverInput_XXX = nullptr;
     };
 } // namespace
 

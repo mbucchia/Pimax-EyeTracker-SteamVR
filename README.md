@@ -36,7 +36,7 @@ This effectively sets the value for the `XrSystemEyeGazeInteractionPropertiesEXT
 
 ![OpenXR Explorer showing the value of supportsEyeGazeInteraction](images/openxr-explorer.png)
 
-The HMD class driver will need to use the undocumented internal interface `IVRDriverInput_XXX`, declared as follows:
+The HMD class driver will need to use the undocumented internal interface `IVRDriverInputInternal_XXX`, declared as follows:
 
 ```cpp
 namespace vr {
@@ -47,8 +47,6 @@ namespace vr {
     };
 
     struct IVRDriverInputInternal_XXX {
-        virtual void dummy01() = 0;
-        virtual void dummy02() = 0;
         virtual vr::EVRInputError CreateEyeTrackingComponent(vr::PropertyContainerHandle_t ulContainer,
                                                              const char* pchName,
                                                              vr::VRInputComponentHandle_t* pHandle) = 0;
