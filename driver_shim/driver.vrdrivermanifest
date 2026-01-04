@@ -1,6 +1,7 @@
 {
 	"alwaysActivate": true,
 	"name" : "aapvr_shim",
+	"redirectsDisplay": true,
 
 	"hmd_presence" :
 	[

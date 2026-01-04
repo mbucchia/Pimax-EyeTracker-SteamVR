@@ -26,42 +26,14 @@
 #include "DetourUtils.h"
 #include "Tracing.h"
 
-namespace vr {
-    struct VREyeTrackingData_t {
-        uint16_t flag1;
-        uint8_t flag2;
-        DirectX::XMVECTOR vector;
-    };
-
-    struct IVRDriverInputInternal_XXX {
-        virtual vr::EVRInputError CreateEyeTrackingComponent(vr::PropertyContainerHandle_t ulContainer,
-                                                             const char* pchName,
-                                                             vr::VRInputComponentHandle_t* pHandle) = 0;
-        virtual vr::EVRInputError UpdateEyeTrackingComponent(vr::VRInputComponentHandle_t ulComponent,
-                                                             VREyeTrackingData_t* data) = 0;
-    };
-
-    struct IVRDriverInput_XXX {
-        virtual void dummy00() = 0;
-        virtual void dummy01() = 0;
-        virtual void dummy02() = 0;
-        virtual void dummy03() = 0;
-        virtual void dummy04() = 0;
-        virtual void dummy05() = 0;
-        virtual void dummy06() = 0;
-        // IVRDriverInput_004 starts here
-        virtual void dummy07() = 0;
-        virtual void dummy08() = 0;
-        virtual vr::EVRInputError CreateEyeTrackingComponent(vr::PropertyContainerHandle_t ulContainer,
-                                                             const char* pchName,
-                                                             vr::VRInputComponentHandle_t* pHandle) = 0;
-        virtual vr::EVRInputError UpdateEyeTrackingComponent(vr::VRInputComponentHandle_t ulComponent,
-                                                             VREyeTrackingData_t* data) = 0;
-    };
-} // namespace vr
-
 namespace {
     using namespace driver_shim;
+
+    struct EyeTrackerNotSupportedException : public std::exception {
+        const char* what() const throw() {
+            return "Eye tracker is not supported";
+        }
+    };
 
     // The HmdShimDriver driver wraps another ITrackedDeviceServerDriver instance with the intent to override
     // properties and behaviors.
@@ -70,6 +42,12 @@ namespace {
             : m_shimmedDevice(shimmedDevice), m_pvr(pvr), m_pvrSession(pvrSession) {
             TraceLocalActivity(local);
             TraceLoggingWriteStart(local, "HmdShimDriver_Ctor");
+
+            // TODO: Add any early initialization here if needed.
+
+            // TODO: Add capabilities detection (if not already done in Driver::Init() earlier) and throw
+            // EyeTrackerNotSupportedException to skip shimming when capabilities are not available.
+
             TraceLoggingWriteStop(local, "HmdShimDriver_Ctor");
         }
 
@@ -85,52 +63,17 @@ namespace {
             const vr::PropertyContainerHandle_t container =
                 vr::VRProperties()->TrackedDeviceToPropertyContainer(m_deviceIndex);
 
-            // Advertise that we will pass eye tracking data. This is an undocumented property.
-            vr::VRProperties()->SetBoolProperty(container, (vr::ETrackedDeviceProperty)6009, true);
+            // Advertise supportsEyeGazeInteraction.
+            vr::VRProperties()->SetBoolProperty(container, vr::Prop_SupportsXrEyeGazeInteraction_Bool, true);
 
-            // Get the internal interface.
-            vr::EVRInitError eError;
-            {
-                IVRDriverInput_XXX =
-                    (vr::IVRDriverInput_XXX*)vr::VRDriverContext()->GetGenericInterface("IVRDriverInput_004", &eError);
-
-                if (IVRDriverInput_XXX) {
-                    const void** vtable = *((const void***)IVRDriverInput_XXX);
-                    if (((intptr_t)vtable[9] - (intptr_t)vtable[0]) > 0x10000) {
-                        IVRDriverInput_XXX = nullptr;
-                    }
-                }
-                if (!IVRDriverInput_XXX) {
-                    DriverLog("IVRDriverInput_004 appears ineligible for eye tracking");
-                }
-            }
-            if (!IVRDriverInput_XXX) {
-                IVRDriverInputInternal_XXX =
-                    (vr::IVRDriverInputInternal_XXX*)vr::VRDriverContext()->GetGenericInterface(
-                        "IVRDriverInputInternal_XXX", &eError);
-
-                if (IVRDriverInputInternal_XXX) {
-                    const void** vtable = *((const void***)IVRDriverInputInternal_XXX);
-                    if (((intptr_t)vtable[1] - (intptr_t)vtable[0]) > 0x10000) {
-                        IVRDriverInputInternal_XXX = nullptr;
-                    }
-                }
-                if (!IVRDriverInputInternal_XXX) {
-                    DriverLog("IVRDriverInputInternal appears ineligible for eye tracking");
-                }
-            }
-
-            if (IVRDriverInput_XXX) {
-                IVRDriverInput_XXX->CreateEyeTrackingComponent(container, "/eyetracking", &m_eyeTrackingComponent);
-            } else if (IVRDriverInputInternal_XXX) {
-                IVRDriverInputInternal_XXX->CreateEyeTrackingComponent(
-                    container, "/eyetracking", &m_eyeTrackingComponent);
-            } else {
-                DriverLog("No usable interface for eye tracking");
-            }
+            // Create the input component for the eye gaze. It must have the path /eyetracking and nothing else!
+            vr::VRDriverInput()->CreateEyeTrackingComponent(container, "/eyetracking", &m_eyeTrackingComponent);
+            TraceLoggingWriteTagged(
+                local, "HmdShimDriver_Activate", TLArg(m_eyeTrackingComponent, "EyeTrackingComponent"));
             DriverLog("Eye Gaze Component: %lld", m_eyeTrackingComponent);
 
             // Schedule updates in a background thread.
+            // TODO: Can use a callback instead of a thread here, if available.
             m_active = true;
             m_updateThread = std::thread(&HmdShimDriver::UpdateThread, this);
 
@@ -190,6 +133,7 @@ namespace {
                     TraceLoggingWriteStart(sleep, "HmdShimDriver_UpdateThread_Sleep");
 
                     // We refresh the data at this frequency.
+                    // TODO: Use event-based sleep/wake up if appropriate.
                     std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
                     TraceLoggingWriteStop(sleep, "HmdShimDriver_UpdateThread_Sleep", TLArg(m_active.load(), "Active"));
@@ -199,6 +143,7 @@ namespace {
                     }
                 }
 
+                // Retrieve the data from the eye tracker and push it to the input component.
                 pvrEyeTrackingInfo state{};
                 pvrResult result = pvr_getEyeTrackingInfo(m_pvrSession, pvr_getTimeSeconds(m_pvr), &state);
                 TraceLoggingWriteTagged(local,
@@ -208,10 +153,6 @@ namespace {
 
                 const bool isEyeTrackingDataAvailable = result == pvr_success && state.TimeInSeconds > 0;
                 if (isEyeTrackingDataAvailable) {
-                    // Not entirely sure what each bit means, but overall this means there is data to pass.
-                    data.flag1 = 0x101;
-                    data.flag2 = 0x1;
-
                     TraceLoggingWriteTagged(local,
                                             "HmdShimDriver_PvrEyeTrackingInfo",
                                             TLArg(state.GazeTan[0].x, "LeftGazeTanX"),
@@ -224,21 +165,19 @@ namespace {
                     const float angleVertical = atanf((state.GazeTan[0].y + state.GazeTan[1].y) / 2.f);
 
                     // Use polar coordinates to create a unit vector.
-                    data.vector =
+                    DirectX::XMStoreFloat3(
+                        (DirectX::XMFLOAT3*)&data.vGazeTarget,
                         DirectX::XMVector3Normalize(DirectX::XMVectorSet(sinf(angleHorizontal) * cosf(angleVertical),
                                                                          sinf(angleVertical),
                                                                          -cosf(angleHorizontal) * cosf(angleVertical),
-                                                                         1));
+                                                                         1)));
+                    data.bValid = data.bTracked = data.bActive = true;
                 } else {
-                    data.flag1 = 0;
-                    data.flag2 = 0;
-                    data.vector = DirectX::XMVectorSet(0, 0, -1, 1);
+                    // Fallback to identity.
+                    DirectX::XMStoreFloat3((DirectX::XMFLOAT3*)&data.vGazeTarget, DirectX::XMVectorSet(0, 0, -1, 1));
+                    data.bValid = data.bTracked = data.bActive = false;
                 }
-                if (IVRDriverInput_XXX) {
-                    IVRDriverInput_XXX->UpdateEyeTrackingComponent(m_eyeTrackingComponent, &data);
-                } else if (IVRDriverInputInternal_XXX) {
-                    IVRDriverInputInternal_XXX->UpdateEyeTrackingComponent(m_eyeTrackingComponent, &data);
-                }
+                vr::VRDriverInput()->UpdateEyeTrackingComponent(m_eyeTrackingComponent, &data, 0.f);
             }
 
             DriverLog("Bye from HmdShimDriver::UpdateThread");
@@ -256,8 +195,6 @@ namespace {
         std::thread m_updateThread;
 
         vr::VRInputComponentHandle_t m_eyeTrackingComponent = 0;
-        vr::IVRDriverInputInternal_XXX* IVRDriverInputInternal_XXX = nullptr;
-        vr::IVRDriverInput_XXX* IVRDriverInput_XXX = nullptr;
     };
 } // namespace
 
@@ -266,7 +203,11 @@ namespace driver_shim {
     vr::ITrackedDeviceServerDriver* CreateHmdShimDriver(vr::ITrackedDeviceServerDriver* shimmedDriver,
                                                         pvrEnvHandle pvr,
                                                         pvrSessionHandle pvrSession) {
-        return new HmdShimDriver(shimmedDriver, pvr, pvrSession);
+        try {
+            return new HmdShimDriver(shimmedDriver, pvr, pvrSession);
+        } catch (EyeTrackerNotSupportedException&) {
+            return shimmedDriver;
+        }
     }
 
 } // namespace driver_shim

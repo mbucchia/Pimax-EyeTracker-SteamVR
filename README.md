@@ -22,77 +22,81 @@ git submodule update --init
 
 ## SteamVR API for Eye Tracking
 
-> [!WARNING]
-> IF YOU ARE READING THIS IN SEPTEMBER 2025 OR AFTER - NOTE THAT THIS HACK IS NO LONGER RELEVANT.
->
-> SteamVR now exposes the necessary API through `IVRDriverInput`.
+Starting with SteamVR 2.8.3, the [`XR_EXT_eye_gaze_interaction`](https://registry.khronos.org/OpenXR/specs/1.0/man/html/XR_EXT_eye_gaze_interaction.html) OpenXR extension is advertised by the SteamVR OpenXR runtime.
 
-Starting with SteamVR 2.8.3, the [`XR_EXT_eye_gaze_interaction`](https://registry.khronos.org/OpenXR/specs/1.0/man/html/XR_EXT_eye_gaze_interaction.html) OpenXR extension is advertised by the SteamVR OpenXR runtime. However, Valve yet has to publish an updated [OpenVR Driver SDK](https://github.com/ValveSoftware/openvr/tree/master/headers) with the necessary API for any 3rd party driver to send eye trackinh data to the extension.
+Starting with SteamVR SDK 2.12.14, Valve has published the necessary API for any 3rd party driver to send eye tracking data to the extension.
 
-In this project, we show how to use the undocumented API.
-
-First, the driver must set property 6009 to indicate that it will send eye tracking data.
+First, the driver must set property `Prop_SupportsXrEyeGazeInteraction_Bool` to indicate that it will send eye tracking data. This is typically done in your driver's `Activate()` method.
 
 ```cpp
-    vr::VRProperties()->SetBoolProperty(container, (vr::ETrackedDeviceProperty)6009, true);
+    vr::VRProperties()->SetBoolProperty(container, vr::Prop_SupportsXrEyeGazeInteraction_Bool, true);
 ```
 
 This effectively sets the value for the `XrSystemEyeGazeInteractionPropertiesEXT.supportsEyeGazeInteraction` property that applications can query:
 
 ![OpenXR Explorer showing the value of supportsEyeGazeInteraction](images/openxr-explorer.png)
 
-The HMD class driver will need to use the undocumented internal interface `IVRDriverInputInternal_XXX`, declared as follows:
+The HMD class driver will need to use the `IVRDriverInput` interface to send the eye gaze data to SteamVR, which is defined as follows:
 
 ```cpp
-namespace vr {
-    struct VREyeTrackingData_t {
-        uint16_t flag1;
-        uint8_t flag2;
-        DirectX::XMVECTOR vector;
+    struct VREyeTrackingData_t
+    {
+        bool bActive;
+        bool bValid;
+        bool bTracked;
+
+        vr::HmdVector3_t vGazeOrigin;  // Ray origin
+        vr::HmdVector3_t vGazeTarget;  // Gaze target (fixation point)
     };
 
-    struct IVRDriverInputInternal_XXX {
-        virtual vr::EVRInputError CreateEyeTrackingComponent(vr::PropertyContainerHandle_t ulContainer,
-                                                             const char* pchName,
-                                                             vr::VRInputComponentHandle_t* pHandle) = 0;
-        virtual vr::EVRInputError UpdateEyeTrackingComponent(vr::VRInputComponentHandle_t ulComponent,
-                                                             VREyeTrackingData_t* data) = 0;
+    struct IVRDriverInput {
+        [...]
+
+		/** Creates an eye tracking component **/
+		virtual EVRInputError CreateEyeTrackingComponent(PropertyContainerHandle_t ulContainer,
+                                                         const char *pchName,
+                                                         VRInputComponentHandle_t *pHandle) = 0;
+
+		/** Updates an eye tracking component. */
+		virtual EVRInputError UpdateEyeTrackingComponent(VRInputComponentHandle_t ulComponent,
+                                                         const VREyeTrackingData_t *pEyeTrackingData,
+                                                         double fTimeOffset ) = 0;
     };
 } // namespace vr
 ```
 
-We retrieve a pointer to this interface:
+We can create a special input component to submit the eye tracking data and store the resulting handle. The path to this component **must** be `/eyetracking`:
 
 ```cpp
-    vr::EVRInitError eError;
-    vr::IVRDriverInputInternal_XXX* IVRDriverInputInternal_XXX =
-        (vr::IVRDriverInputInternal_XXX*)vr::VRDriverContext()->GetGenericInterface("IVRDriverInputInternal_XXX", &eError);
+    vr::VRDriverInput()->CreateEyeTrackingComponent(container, "/eyetracking", &m_eyeTrackingComponent);
 ```
 
-We now create a special component to submit the eye tracking data and store the resulting handle:
+Finally, we can push eye tracking data to SteamVR when appropriate (this can be done in a callback or a periodic task):
 
 ```cpp
-    IVRDriverInputInternal_XXX->CreateEyeTrackingComponent(container, "/eyetracking", &m_eyeTrackingComponent);
-```
-
-Finally, we can push eye tracking data to SteamVR when appropriate.
-
-```
     VREyeTrackingData_t data{};
     if (isEyeTrackingDataAvailable) {
-        // Not entirely sure what each bit means, but overall this means there is data to pass.
-        data.flag1 = 0x101;
-        data.flag2 = 0x1;
-        data.vector = DirectX::XMVector3Normalize(DirectX::XMVectorSet(x, y, z, 1));
+        // Compute the gaze pitch/yaw angles by averaging both eyes.
+        const float angleHorizontal = atanf((state.GazeTan[0].x + state.GazeTan[1].x) / 2.f);
+        const float angleVertical = atanf((state.GazeTan[0].y + state.GazeTan[1].y) / 2.f);
+
+        // Use polar coordinates to create a unit vector.
+        DirectX::XMStoreFloat3(
+            (DirectX::XMFLOAT3*)&data.vGazeTarget,
+            DirectX::XMVector3Normalize(DirectX::XMVectorSet(sinf(angleHorizontal) * cosf(angleVertical),
+                                                             sinf(angleVertical),
+                                                             -cosf(angleHorizontal) * cosf(angleVertical),
+                                                             1)));
+        data.bValid = data.bTracked = data.bActive = true;
     } else {
-        data.flag1 = 0;
-        data.flag2 = 0;
-        data.vector = DirectX::XMVectorSet(0, 0, -1, 1);
+        // Fallback to identity.
+        DirectX::XMStoreFloat3((DirectX::XMFLOAT3*)&data.vGazeTarget, DirectX::XMVectorSet(0, 0, -1, 1));
+        data.bValid = data.bTracked = data.bActive = false;
     }
-    IVRDriverInputInternal_XXX->UpdateEyeTrackingComponent(m_eyeTrackingComponent, &data);
+    vr::VRDriverInput()->UpdateEyeTrackingComponent(m_eyeTrackingComponent, &data, 0.f);
 ```
 
-The gaze vector is a unit vector that originates from the center of the head and points forward (z=-1).
+The gaze vector above is a unit vector that originates from the center of the head and points forward (z=-1).
 
 ## Driver Shimming with SteamVR
 
