@@ -1,5 +1,5 @@
 {
-  "driver_aapvr_shim": {
+  "driver_PimaxEyeTracking": {
     "loadPriority": 1000
   }
 }

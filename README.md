@@ -108,7 +108,7 @@ Our shim driver must be loaded early, which can be accomplished by providing a `
 
 ```json
 {
-  "driver_aapvr_shim": {
+  "driver_PimaxEyeTracking": {
     "loadPriority": 1000
   }
 }

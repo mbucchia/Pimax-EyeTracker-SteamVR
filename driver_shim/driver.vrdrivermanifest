@@ -1,6 +1,6 @@
 {
 	"alwaysActivate": true,
-	"name" : "aapvr_shim",
+	"name" : "PimaxEyeTracking",
 	"redirectsDisplay": true,
 
 	"hmd_presence" :
