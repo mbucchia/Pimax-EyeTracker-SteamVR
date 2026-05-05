@@ -75,8 +75,8 @@ namespace {
                         throw EyeTrackerNotSupportedException();
                     }
 
-                    // Look for a Pimax Crystal or Pimax Crystal Super.
-                    if (!(info.VendorId == 0x34A4 && (info.ProductId == 0x0012 || info.ProductId == 0x0040))) {
+                    // Look for a Pimax Crystal , Pimax Crystal Super or Pimax Dream Air.
+                    if (!(info.VendorId == 0x34A4 && (info.ProductId == 0x0012 || info.ProductId == 0x0040 || info.ProductId == 0x0044))) {
                         TraceLoggingWriteTagged(local,
                                                 "Driver_Init_HmdNotSupported",
                                                 TLArg(info.VendorId, "VendorId"),
