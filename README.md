@@ -4,7 +4,7 @@ This program shows how to shim (extend) and existing, pre-compiled, SteamVR driv
 
 DISCLAIMER: This software is distributed as-is, without any warranties or conditions of any kind. Use at your own risks.
 
-# If you are here only to get eye tracking on your Pimax Crystal / Pimax Crystal Super, go to the [Releases page](https://github.com/mbucchia/Pimax-EyeTracker-SteamVR/releases)
+# If you are here only to get eye tracking on your Pimax Crystal, Pimax Crystal Super or Pimax Dream Air, go to the [Releases page](https://github.com/mbucchia/Pimax-EyeTracker-SteamVR/releases)
 
 # Developer Walkthrough
 
